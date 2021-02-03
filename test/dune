@@ -1,2 +1,3 @@
 (test
- (name base32))
+ (name base32)
+ (libraries alcotest base32))
