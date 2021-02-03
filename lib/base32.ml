@@ -30,7 +30,7 @@ let ( // ) x y =
 [@@inline]
 
 let unsafe_get_uint8 input off =
-  Bytes.unsafe_get input off
+  String.unsafe_get input off
   |> Char.code
 
 let unsafe_set_uint8 input off v =
@@ -68,9 +68,9 @@ let error_msgf fmt = Format.ksprintf (fun err -> Error (`Msg err)) fmt
 
 let encode_sub pad {emap; _} ?(off = 0) ?len input =
   let len =
-    match len with Some len -> len | None -> Bytes.length input - off in
+    match len with Some len -> len | None -> String.length input - off in
 
-  if len < 0 || off < 0 || off > Bytes.length input - len
+  if len < 0 || off < 0 || off > String.length input - len
   then error_msgf "Invalid bounds"
   else
     let n = len in
@@ -244,14 +244,14 @@ let decode_sub { dmap; _ } ?(off = 0) ?len input =
     in
 
     match dec 0 0 with
-    | pad -> Ok (res, 0, n' - pad)
+    | pad -> Ok (Bytes.unsafe_to_string res, 0, n' - pad)
     | exception Not_found ->
       error_msgf "Malformed input"
 
 
 let decode ?(alphabet = default_alphabet) ?off ?len input =
   match decode_sub alphabet ?off ?len input with
-  | Ok (res, off, len) -> Ok (Bytes.sub res off len)
+  | Ok (res, off, len) -> Ok (String.sub res off len)
   | Error _ as err -> err
 
 let decode_sub ?(alphabet = default_alphabet) ?off ?len input =
