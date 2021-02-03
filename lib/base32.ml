@@ -172,3 +172,92 @@ let encode_exn ?pad ?alphabet ?off ?len input =
   match encode ?pad ?alphabet ?off ?len input with
   | Ok v -> v
   | Error (`Msg err) -> invalid_arg err
+
+let decode_sub { dmap; _ } ?(off = 0) ?len input =
+  let len =
+    match len with Some len -> len | None -> String.length input - off in
+
+  if len < 0 || off < 0 || off > String.length input - len
+  then error_msgf "Invalid bounds"
+  else
+    let n = len // 8 * 8 in
+    let n' = n // 8 * 5 in
+    let res = Bytes.create n' in
+
+    let get_uint8 t i =
+      if i < len then
+        Char.code (String.unsafe_get t (off + i))
+      else
+        padding
+    in
+
+    let set_uint8 t off v =
+      (* Format.printf "set_uint8 %d\n" (v land 0xff); *)
+      if off < 0 || off >= Bytes.length t then
+        ()
+      else unsafe_set_uint8 t off (v land 0xff)
+    in
+
+    let emit b0 b1 b2 b3 b4 b5 b6 b7 j =
+      set_uint8 res j ((b0 lsl 3) lor (b1 lsr 2));
+      set_uint8 res (j + 1) ((b1 lsl 6) lor (b2 lsl 1) lor (b3 lsr 4));
+      set_uint8 res (j + 2) ((b3 lsl 4) lor (b4 lsr 1));
+      set_uint8 res (j + 3) ((b4 lsl 7) lor (b5 lsl 2) lor (b6 lsr 3));
+      set_uint8 res (j + 4) ((b6 lsl 5) lor b7)
+    in
+
+    let dmap i = Array.unsafe_get dmap i in
+
+    let get_uint8_with_padding t i padding =
+      let x = get_uint8 t i in
+      if x = 61 then
+        (0, padding)
+      else
+        let v = dmap x in
+        if v > 0 then
+          (v, 0)
+        else
+          raise Not_found
+    in
+
+    let rec dec j i =
+      if i = n then
+        0
+      else
+        let b0, pad0 = get_uint8_with_padding input i 5 in
+        let b1, pad1 = get_uint8_with_padding input (i + 1) 5 in
+        let b2, pad2 = get_uint8_with_padding input (i + 2) 4 in
+        let b3, pad3 = get_uint8_with_padding input (i + 3) 4 in
+        let b4, pad4 = get_uint8_with_padding input (i + 4) 3 in
+        let b5, pad5 = get_uint8_with_padding input (i + 5) 2 in
+        let b6, pad6 = get_uint8_with_padding input (i + 6) 2 in
+        let b7, pad7 = get_uint8_with_padding input (i + 7) 1 in
+        let pad = List.fold_left max 0 [pad0; pad1; pad2; pad3; pad4; pad5; pad6; pad7] in
+
+        (* Format.printf "emit %d %d %d %d %d %d %d %d\n" b0 b1 b2 b3 b4 b5 b6 b7; *)
+
+        emit b0 b1 b2 b3 b4 b5 b6 b7 j;
+        if pad == 0 then
+          dec (j + 5) (i + 8)
+        else
+          pad
+    in
+
+    match dec 0 0 with
+    | pad -> Ok (res, 0, n' - pad)
+    | exception Not_found ->
+      error_msgf "Malformed input"
+
+
+let decode ?(alphabet = default_alphabet) ?off ?len input =
+  match decode_sub alphabet ?off ?len input with
+  | Ok (res, off, len) -> Ok (Bytes.sub res off len)
+  | Error _ as err -> err
+
+let decode_sub ?(alphabet = default_alphabet) ?off ?len input =
+  decode_sub alphabet ?off ?len input
+
+let decode_exn ?alphabet ?off ?len input =
+  match decode ?alphabet ?off ?len input with
+  | Ok res -> res
+  | Error (`Msg err) -> invalid_arg err
