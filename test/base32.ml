@@ -1,3 +1,9 @@
+(*
+ * SPDX-FileCopyrightText: 2021 petites singularités <ps-dream@lesoiseaux.io>
+ * SPDX-FileCopyrightText: 2021 pukkamustard <pukkamustard@posteo.net>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *)
 
 let test_encode_padded () =
   Alcotest.(
@@ -43,6 +49,28 @@ let test_decode_invalid () =
   Alcotest.check_raises "invalid" (Invalid_argument "Malformed input")
     (fun () -> Base32.decode_exn "invalid" |> ignore)
 
+let padded_property_based =
+  QCheck.Test.make ~count:1000
+    ~name:"encode and decode random strings"
+    QCheck.string
+    (fun s ->
+       String.equal s
+         (s
+          |> Base32.encode_string
+          |> Base32.decode_exn)
+    )
+
+let unpadded_property_based =
+  QCheck.Test.make ~count:1000
+    ~name:"encode and decode random strings (unpadded)"
+    QCheck.string
+    (fun s ->
+       String.equal s
+         (s
+          |> Base32.encode_string
+          |> Base32.decode_exn)
+    )
+
 let () =
   let open Alcotest in
   run "Base32" [
@@ -55,4 +83,8 @@ let () =
       test_case "upadded" `Quick test_decode_unpadded;
       test_case "invalid" `Quick test_decode_invalid;
     ];
+    "property based", [
+      QCheck_alcotest.to_alcotest padded_property_based;
+      QCheck_alcotest.to_alcotest unpadded_property_based
+    ]
   ]

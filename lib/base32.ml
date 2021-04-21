@@ -214,7 +214,7 @@ let decode_sub { dmap; _ } ?(off = 0) ?len input =
         (0, padding)
       else
         let v = dmap x in
-        if v > 0 then
+        if v >= 0 then
           (v, 0)
         else
           raise Not_found
