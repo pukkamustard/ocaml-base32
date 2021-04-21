@@ -1,10 +1,3 @@
-(*
- * SPDX-FileCopyrightText: 2021 petites singularités <ps-dream@lesoiseaux.io>
- * SPDX-FileCopyrightText: 2021 pukkamustard <pukkamustard@posteo.net>
- *
- * SPDX-License-Identifier: AGPL-3.0-or-later
- *)
-
 let test_encode_padded () =
   Alcotest.(
     check string "" (Base32.encode_string "") "";
