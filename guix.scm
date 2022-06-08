@@ -1,25 +1,23 @@
 (use-modules
  (guix packages)
- (guix download)
- (guix git-download)
  (guix build-system dune)
  ((guix licenses) #:prefix license:)
- (gnu packages ocaml)
- (gnu packages libevent))
+ (gnu packages ocaml))
 
 (define-public ocaml-base32
   (package
     (name "ocaml-base32")
-    (version "0.0.0")
+    (version "1.0.0")
     (source #f)
     (build-system dune-build-system)
     (arguments '())
     (native-inputs
-     `(("alcotest" ,ocaml-alcotest)
-       ("qcheck" ,ocaml-qcheck)))
-    (home-page "https://gitlab.com/public.dream/DROMEDAR/ocaml-base32")
-    (synopsis "Cross-platform cryptographic primitives required for DROMEDAR")
-    (description "sdfsdf")
-    (license license:agpl3+)))
+     (list ocaml-alcotest ocaml-qcheck))
+    (home-page "https://inqlab.net/git/ocaml-base32")
+    (synopsis "Base32 encoding for OCaml")
+    (description "Base32 is a binary-to-text encoding that represents
+binary data in an ASCII string format by translating it into a
+radix-32 representation.  It is specified in RFC 4648.")
+    (license license:isc)))
 
 ocaml-base32

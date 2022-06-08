@@ -16,7 +16,9 @@ let test_encode_unpadded () =
     check string "foo" (Base32.encode_string ~pad:false "foo") "MZXW6";
     check string "foob" (Base32.encode_string ~pad:false "foob") "MZXW6YQ";
     check string "fooba" (Base32.encode_string ~pad:false "fooba") "MZXW6YTB";
-    check string "foobar" (Base32.encode_string ~pad:false "foobar") "MZXW6YTBOI")
+    check string "foobar"
+      (Base32.encode_string ~pad:false "foobar")
+      "MZXW6YTBOI")
 
 let test_decode_padded () =
   Alcotest.(
@@ -43,41 +45,33 @@ let test_decode_invalid () =
     (fun () -> Base32.decode_exn "invalid" |> ignore)
 
 let padded_property_based =
-  QCheck.Test.make ~count:1000
-    ~name:"encode and decode random strings"
-    QCheck.string
-    (fun s ->
-       String.equal s
-         (s
-          |> Base32.encode_string
-          |> Base32.decode_exn)
-    )
+  QCheck.Test.make ~count:1000 ~name:"encode and decode random strings"
+    QCheck.string (fun s ->
+      String.equal s (s |> Base32.encode_string |> Base32.decode_exn))
 
 let unpadded_property_based =
   QCheck.Test.make ~count:1000
-    ~name:"encode and decode random strings (unpadded)"
-    QCheck.string
-    (fun s ->
-       String.equal s
-         (s
-          |> Base32.encode_string
-          |> Base32.decode_exn)
-    )
+    ~name:"encode and decode random strings (unpadded)" QCheck.string (fun s ->
+      String.equal s (s |> Base32.encode_string |> Base32.decode_exn))
 
 let () =
   let open Alcotest in
-  run "Base32" [
-    "encode", [
-      test_case "padded" `Quick test_encode_padded;
-      test_case "unpadded" `Quick test_encode_unpadded;
-    ];
-    "decode", [
-      test_case "padded" `Quick test_decode_padded;
-      test_case "upadded" `Quick test_decode_unpadded;
-      test_case "invalid" `Quick test_decode_invalid;
-    ];
-    "property based", [
-      QCheck_alcotest.to_alcotest padded_property_based;
-      QCheck_alcotest.to_alcotest unpadded_property_based
+  run "Base32"
+    [
+      ( "encode",
+        [
+          test_case "padded" `Quick test_encode_padded;
+          test_case "unpadded" `Quick test_encode_unpadded;
+        ] );
+      ( "decode",
+        [
+          test_case "padded" `Quick test_decode_padded;
+          test_case "upadded" `Quick test_decode_unpadded;
+          test_case "invalid" `Quick test_decode_invalid;
+        ] );
+      ( "property based",
+        [
+          QCheck_alcotest.to_alcotest padded_property_based;
+          QCheck_alcotest.to_alcotest unpadded_property_based;
+        ] );
     ]
-  ]
